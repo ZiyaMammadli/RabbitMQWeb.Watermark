@@ -7,9 +7,9 @@ public class RabbitMQClientService:IDisposable
     private readonly ConnectionFactory _connectionFactory;
     private IConnection _connection;
     private IChannel _channel;
-    private static string queueName = "queue-image-watermark";
-    private static string exchangeName = "ImageDirectExchange";
-    private static string routingKey = "route-image-watermark";
+    public static string queueName = "queue-image-watermark";
+    public static string exchangeName = "ImageDirectExchange";
+    public static string routingKey = "route-image-watermark";
 
     private readonly ILogger<RabbitMQClientService> _logger;
 
@@ -17,7 +17,6 @@ public class RabbitMQClientService:IDisposable
     {
         _connectionFactory = connectionFactory;
         _logger = logger;
-        Connect();
     }
 
     public async Task<IChannel> Connect()

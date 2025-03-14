@@ -9,5 +9,6 @@ public static class RabbitMQRegistration
     {
         services.AddSingleton(sp => new ConnectionFactory() { Uri= new Uri(config.GetConnectionString("RabbitMQ"))});
         services.AddSingleton(typeof(RabbitMQClientService));
+        services.AddSingleton<RabbitMQPublish>();
     }
 }
