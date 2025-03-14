@@ -1,17 +1,20 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQWeb.Watermark.Contexts;
 using RabbitMQWeb.Watermark.Models;
+using RabbitMQWeb.Watermark.Services;
 
 namespace RabbitMQWeb.Watermark.Controllers
 {
     public class ProductsController : Controller
     {
         private readonly AppDbContext _context;
-
-        public ProductsController(AppDbContext context)
+        private readonly RabbitMQPublish _rabbitMQPublish;
+        public ProductsController(AppDbContext context, RabbitMQPublish rabbitMQPublish)
         {
             _context = context;
+            _rabbitMQPublish = rabbitMQPublish;
         }
 
         [HttpGet]
@@ -46,15 +49,28 @@ namespace RabbitMQWeb.Watermark.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Price,Stock,ImageUrl")] Product product)
+        public async Task<IActionResult> Create([Bind("Id,Name,Price,Stock,ImageName")] Product product, IFormFile ImageFile)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return View(product);
+
+            if(ImageFile is { Length: > 0 })
             {
-                _context.Add(product);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                var randomImageName=Guid.NewGuid().ToString()+ Path.GetExtension(ImageFile.FileName);
+
+                var path=Path.Combine(Directory.GetCurrentDirectory(),"wwwroot\\images",randomImageName);
+
+                await using FileStream stream = new(path, FileMode.Create);
+
+                await ImageFile.CopyToAsync(stream);
+
+                await _rabbitMQPublish.Puplish(new ProductImageCreatedEvent() { ImageName=randomImageName});
+
+                product.ImageName = randomImageName;
             }
-            return View(product);
+
+            _context.Add(product);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
@@ -75,7 +91,7 @@ namespace RabbitMQWeb.Watermark.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,Stock,ImageUrl")] Product product)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,Stock,ImageName")] Product product)
         {
             if (id != product.Id)
             {

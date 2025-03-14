@@ -22,12 +22,12 @@ public class RabbitMQClientService:IDisposable
     public async Task<IChannel> Connect()
     {
         _connection=await _connectionFactory.CreateConnectionAsync();
-        _channel=await _connection.CreateChannelAsync();
 
         if (_channel is { IsOpen: true })
         {
             return _channel;
         }
+        _channel=await _connection.CreateChannelAsync();
 
         await _channel.QueueDeclareAsync(queueName,true,false,false);
         await _channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct, true, false, null);
