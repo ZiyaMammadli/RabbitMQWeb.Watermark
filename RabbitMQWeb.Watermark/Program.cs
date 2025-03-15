@@ -1,3 +1,4 @@
+using RabbitMQWeb.Watermark.BackgroundServices;
 using RabbitMQWeb.Watermark.Registrations;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddAppDbContext(builder.Configuration);
 builder.Services.AddRabbitMQ(builder.Configuration);
+builder.Services.AddHostedService<ImageWatermarkProcessBackgroundService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -25,6 +27,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Products}/{action=Index}/{id?}");
 
 app.Run();
